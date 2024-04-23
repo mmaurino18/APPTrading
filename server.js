@@ -10,14 +10,13 @@ const alpaca = new Alpaca({
     secretKey: process.env.ALPACA_API_SECRET_KEY,
     paper: true, // Usar el entorno de pruebas (paper trading)
 });
+
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Access your API key as an environment variable (see "Set up your API key" above)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const generativeModel = genAI.getGenerativeModel({ model: "gemini-pro"});
-
-
 // Crear conexión websocket con el servicio de noticias de Alpaca
 const wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
 
@@ -55,13 +54,12 @@ wss.on('message', async function(message) {
             // Preparar solicitud para ChatGPT con la noticia actual
             const question = "Given the headline '" + currentEvent.headline + "', show me a number from 1-100 detailing the impact of this headline.";
             const apiRequestBodyGPT = {
-                model: "gpt-3.5-turbo",
+                model: "gpt-3.5-turbo-0125",
                 messages: [
                     { role: "system", content: "Only respond with a number from 1-100 detailing the impact of the headline." },
                     { role: "user", content: question }
                 ]
             };
-
             // Enviar solicitud a la API de OpenAI (ChatGPT)
             const responseGPT = await fetch("https://api.openai.com/v1/chat/completions", {
                 method: "POST",
@@ -76,13 +74,12 @@ wss.on('message', async function(message) {
             if (!responseGPT.ok) {
                 throw new Error('Failed to fetch ChatGPT completion');
             }
+            /*.catch((error) => {
+                console.log(error)
+              });*/
 
             // Obtener datos de la respuesta JSON
             const dataGPT = await responseGPT.json();
-            //console.log(dataGPT);
-            //console.log(dataGPT.choices[0].message);
-
-            // Extraer el impacto estimado de la respuesta de ChatGPT
             const companyImpactGPT = parseInt(dataGPT.choices[0].message.content);
             
             //GEMINI
@@ -94,18 +91,53 @@ wss.on('message', async function(message) {
             const geminiContent = responseGemini.text();
             //console.log(geminiContent);
             const companyImpactGemini = extractCompanyImpact(geminiContent);
-    
             const tickerSymbol = currentEvent.symbols[0];
+
             console.log(companyImpactGemini);
             console.log(companyImpactGPT);
-            if ((companyImpactGPT >= 75 && companyImpactGemini >= 70) || (companyImpactGPT >= 70 && companyImpactGemini >= 75)) {
-                // Comprar acciones
+
+            //const tickerSymbol2 = 'AAPL';
+            //const latestQuote = await alpaca.getLatestQuote(tickerSymbol);
+
+            //const currentPrice = latestQuote.c;
+            //console.log(`Current price of ${tickerSymbol}: ${currentPrice}`);
+            //const barset = await alpaca.getBarsV2("minute", tickerSymbol, { limit: 1 });
+            //const bars = barset[tickerSymbol2];
+            /*alpaca.getLatestTrade(tickerSymbol).then((trade) => {
+                console.log(`El precio actual de ${symbol} es ${trade.price}`);
+              }).catch((error) => {
+                console.log('Hubo un error al obtener el precio:', error);
+              });*/
+            //const currentPrice2 = bars.slice(-1)[0].c;
+            //console.log(currentPrice2);
+            /*.lastQuote('AAPL').then((response) => {
+                console.log(response);
+              });*/
+            //const currentPrice = bars[bars.length - 1].c
+            //const roundedNotional = parseFloat(notionalAmount.toFixed(2));
+            let multiplicador = 1;
+            if((companyImpactGPT >= 85 && companyImpactGemini >= 80)||(companyImpactGPT >= 80 && companyImpactGemini >= 85)||(companyImpactGPT >= 90)||(companyImpactGemini >= 90)){
+                multiplicador= 2;
+            }
+            if((companyImpactGPT >= 93 && companyImpactGemini >= 90)||(companyImpactGPT >= 90 && companyImpactGemini >= 93)||(companyImpactGPT >= 95)||(companyImpactGemini >= 95)){
+                multiplicador= 4;
+            }
+            if((companyImpactGPT >= 75 && companyImpactGemini >= 70)||(companyImpactGPT >= 70 && companyImpactGemini >= 75)||(companyImpactGPT >= 80)||(companyImpactGemini >= 80)) {
                 const order = await alpaca.createOrder({
-                    symbol: tickerSymbol,
-                    qty: 1,
-                    side: 'buy',
-                    type: 'market',
-                    time_in_force: 'day' // Orden válida solo durante el día
+                    symbol: tickerSymbol,  // Símbolo del activo que deseas comprar (por ejemplo, 'AAPL' para Apple)
+                    notional: 1000 * multiplicador,
+                    //qty:1  // El monto total a invertir, como un porcentaje del poder de compra disponible
+                    side: 'buy',  // Indica que esta es una orden de compra
+                    type: 'market',  // Tipo de orden: 'market' para comprar al precio de mercado actual
+                    time_in_force: 'day',  // Duración de la orden: 'day' para que la orden expire al final del día
+                    //limit_price: account.buying_power * 0.9,  // Precio límite de la orden (no se usa en una orden de mercado)
+                     // Clase de orden: 'bracket' para una orden con órdenes de take-profit y stop-loss adjuntas
+                    /*take_profit: {
+                        limit_price: currentPrice  * 1.15,  // Precio límite para la orden de take-profit (15% por encima del precio de compra)
+                    },
+                    stop_loss: {
+                        stop_price: currentPrice  * 0.65,  // Precio límite para la orden de take-profit (15% por encima del precio de compra)
+                    },*/
                 });
                 console.log("Order placed:", order);
             } else if (companyImpactGPT <= 30) {
@@ -118,6 +150,7 @@ wss.on('message', async function(message) {
         console.error('Error processing WebSocket message:', error);
     }
 });
+
 function extractCompanyImpact(generatedText) {
     const numberPattern = /\b\d+\b/; // Expresión regular para encontrar números enteros en el texto
     const match = generatedText.match(numberPattern);
@@ -126,6 +159,6 @@ function extractCompanyImpact(generatedText) {
         const companyImpact = parseInt(match[0]);
         return companyImpact;
     } else {
-        return NaN; // Devuelve NaN si no se puede encontrar un número entero válido en el texto
+        return 0; // Devuelve NaN si no se puede encontrar un número entero válido en el texto
     }
 }
