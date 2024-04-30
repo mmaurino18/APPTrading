@@ -3,9 +3,10 @@
 const WebSocket = require('ws');
 const fetch = require('node-fetch').default;
 require('dotenv').config(); // Cargar las variables de entorno desde .env
-
+const cron = require('node-cron');
 const express = require('express');
 const app = express();
+const chat_id= "1856656765";
 const port = process.env.PORT || 3000; // Usar el puerto definido en la variable de entorno PORT o el puerto 3000 por defecto
 app.listen(port, () => {
   console.log(`Servidor escuchando en el puerto ${port}`);
@@ -32,7 +33,6 @@ const wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
 // Manejar eventos de apertura y mensajes de la conexión websocket
 wss.on('open', function() {
     console.log("Websocket connected!");
-    const chat_id= "1856656765"
     sendMessageToTelegram('Me conecte correctamente',chat_id);
     // Autenticarse con el servicio de noticias de Alpaca
     const authMsg = {
@@ -156,7 +156,7 @@ wss.on('message', async function(message) {
                                         + companyImpactGPT + " de chat GPT\n"
                                         + companyImpactGemini + " de Gemini";
 
-                sendMessageToTelegram(messageTelegram, grupo_chat_id);
+                //sendMessageToTelegram(messageTelegram, grupo_chat_id);
             } else if ((companyImpactGPT <= 30) && (companyImpactGemini >1 && companyImpactGemini<= 30) ) {
                 // Vender todas las acciones de la empresa
                 /*const closedPosition = await alpaca.closePosition(tickerSymbol);
@@ -165,7 +165,7 @@ wss.on('message', async function(message) {
                 + "Los valores son:\n" 
                 + companyImpactGPT + " de chat GPT\n"
                 + companyImpactGemini + " de Gemini";
-                sendMessageToTelegram(messageTelegram, grupo_chat_id);
+                //sendMessageToTelegram(messageTelegram, grupo_chat_id);
             }
         }
     } catch (error) {
@@ -212,4 +212,10 @@ wss.on('close', function() {
     console.log("Websocket disconnected!");
     const chat_id = "1856656765"; // El ID del chat al que deseas enviar la notificación
     sendMessageToTelegram('¡El websocket se ha desconectado!', chat_id);
+});
+
+cron.schedule('*/30 * * * *', () => {
+    sendMessageToTelegram('Sigo funcionando',chat_id);
+    console.log('Sending message every 10 minutes...');
+    ///connectAndSendMessage();
 });

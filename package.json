@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +16,11 @@
     "@google/generative-ai": "^0.5.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "node-cron": "^3.0.3",
     "node-fetch": "^2.7.0",
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
