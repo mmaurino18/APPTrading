@@ -157,7 +157,7 @@ wss.on('message', async function(message) {
                                         + companyImpactGemini + " de Gemini";
 
                 sendMessageToTelegram(messageTelegram, grupo_chat_id);
-            } else if ((companyImpactGPT <= 30) || (companyImpactGemini >1 && companyImpactGemini<= 30) ) {
+            } else if ((companyImpactGPT <= 30) && (companyImpactGemini >1 && companyImpactGemini<= 30) ) {
                 // Vender todas las acciones de la empresa
                 /*const closedPosition = await alpaca.closePosition(tickerSymbol);
                 console.log("Position closed for", tickerSymbol);*/
@@ -208,3 +208,8 @@ async function sendMessageToTelegram(message,chat_id) {
         console.error('Failed to send message:', error);
     }
 }
+wss.on('close', function() {
+    console.log("Websocket disconnected!");
+    const chat_id = "1856656765"; // El ID del chat al que deseas enviar la notificación
+    sendMessageToTelegram('¡El websocket se ha desconectado!', chat_id);
+});
