@@ -4,6 +4,7 @@ const WebSocket = require('ws');
 const fetch = require('node-fetch').default;
 require('dotenv').config(); // Cargar las variables de entorno desde .env
 
+const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000; // Usar el puerto definido en la variable de entorno PORT o el puerto 3000 por defecto
 app.listen(port, () => {
