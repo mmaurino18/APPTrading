@@ -23,7 +23,7 @@ const wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
 // Manejar eventos de apertura y mensajes de la conexión websocket
 wss.on('open', function() {
     console.log("Websocket connected!");
-    //sendMessageToTelegram('holaa' );
+    sendMessageToTelegram('Me conecte correctamente' );
     // Autenticarse con el servicio de noticias de Alpaca
     const authMsg = {
         action: 'auth',
