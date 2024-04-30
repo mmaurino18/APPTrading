@@ -23,7 +23,7 @@ const wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
 // Manejar eventos de apertura y mensajes de la conexión websocket
 wss.on('open', function() {
     console.log("Websocket connected!");
-
+    //sendMessageToTelegram('holaa' );
     // Autenticarse con el servicio de noticias de Alpaca
     const authMsg = {
         action: 'auth',
@@ -115,15 +115,15 @@ wss.on('message', async function(message) {
               });*/
             //const currentPrice = bars[bars.length - 1].c
             //const roundedNotional = parseFloat(notionalAmount.toFixed(2));
-            let multiplicador = 1;
+            let multiplicador = "BUENA";
             if((companyImpactGPT >= 85 && companyImpactGemini >= 80)||(companyImpactGPT >= 80 && companyImpactGemini >= 85)||(companyImpactGPT >= 90)||(companyImpactGemini >= 90)){
-                multiplicador= 2;
+                multiplicador= "MUY BUENA";
             }
             if((companyImpactGPT >= 93 && companyImpactGemini >= 90)||(companyImpactGPT >= 90 && companyImpactGemini >= 93)||(companyImpactGPT >= 95)||(companyImpactGemini >= 95)){
-                multiplicador= 4;
+                multiplicador= "EXCELENTE";
             }
             if((companyImpactGPT >= 75 && companyImpactGemini >= 70)||(companyImpactGPT >= 70 && companyImpactGemini >= 75)||(companyImpactGPT >= 80)||(companyImpactGemini >= 80)) {
-                const order = await alpaca.createOrder({
+                /*const order = await alpaca.createOrder({
                     symbol: tickerSymbol,  // Símbolo del activo que deseas comprar (por ejemplo, 'AAPL' para Apple)
                     notional: 1000 * multiplicador,
                     //qty:1  // El monto total a invertir, como un porcentaje del poder de compra disponible
@@ -137,13 +137,23 @@ wss.on('message', async function(message) {
                     },
                     stop_loss: {
                         stop_price: currentPrice  * 0.65,  // Precio límite para la orden de take-profit (15% por encima del precio de compra)
-                    },*/
+                    },
                 });
-                console.log("Order placed:", order);
-            } else if (companyImpactGPT <= 30) {
+                console.log("Order placed:", order);*/
+                const messageTelegram = "Comprar acciones de " + tickerSymbol + ",la oportunidad es " + multiplicador + "\n "   
+                                        + "Los valores de las IA son:\n" 
+                                        + companyImpactGPT + " de chat GPT\n"
+                                        + companyImpactGemini + " de Gemini";
+
+                sendMessageToTelegram(messageTelegram);
+            } else if ((companyImpactGPT <= 30) || (companyImpactGemini >1 && companyImpactGemini<= 30) ) {
                 // Vender todas las acciones de la empresa
-                const closedPosition = await alpaca.closePosition(tickerSymbol);
-                console.log("Position closed for", tickerSymbol);
+                /*const closedPosition = await alpaca.closePosition(tickerSymbol);
+                console.log("Position closed for", tickerSymbol);*/
+                const messageTelegram = "Vender acciones de " + tickerSymbol + "\n"   
+                + "Los valores son:\n" 
+                + companyImpactGPT + " de chat GPT\n"
+                + companyImpactGemini + " de Gemini";
             }
         }
     } catch (error) {
@@ -160,5 +170,29 @@ function extractCompanyImpact(generatedText) {
         return companyImpact;
     } else {
         return 0; // Devuelve NaN si no se puede encontrar un número entero válido en el texto
+    }
+}
+
+async function sendMessageToTelegram(message) {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const apiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const requestBody = {
+        chat_id: "-1002057046707",
+        text: message
+    };
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const responseData = await response.json();
+        console.log('Message sent successfully:', responseData);
+    } catch (error) {
+        console.error('Failed to send message:', error);
     }
 }
