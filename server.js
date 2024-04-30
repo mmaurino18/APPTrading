@@ -32,7 +32,8 @@ const wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
 // Manejar eventos de apertura y mensajes de la conexión websocket
 wss.on('open', function() {
     console.log("Websocket connected!");
-    sendMessageToTelegram('Me conecte correctamente' );
+    const chat_id= "1856656765"
+    sendMessageToTelegram('Me conecte correctamente',chat_id);
     // Autenticarse con el servicio de noticias de Alpaca
     const authMsg = {
         action: 'auth',
@@ -124,6 +125,7 @@ wss.on('message', async function(message) {
               });*/
             //const currentPrice = bars[bars.length - 1].c
             //const roundedNotional = parseFloat(notionalAmount.toFixed(2));
+            const grupo_chat_id = "-1002057046707";
             let multiplicador = "BUENA";
             if((companyImpactGPT >= 85 && companyImpactGemini >= 80)||(companyImpactGPT >= 80 && companyImpactGemini >= 85)||(companyImpactGPT >= 90)||(companyImpactGemini >= 90)){
                 multiplicador= "MUY BUENA";
@@ -154,7 +156,7 @@ wss.on('message', async function(message) {
                                         + companyImpactGPT + " de chat GPT\n"
                                         + companyImpactGemini + " de Gemini";
 
-                sendMessageToTelegram(messageTelegram);
+                sendMessageToTelegram(messageTelegram, grupo_chat_id);
             } else if ((companyImpactGPT <= 30) || (companyImpactGemini >1 && companyImpactGemini<= 30) ) {
                 // Vender todas las acciones de la empresa
                 /*const closedPosition = await alpaca.closePosition(tickerSymbol);
@@ -163,6 +165,7 @@ wss.on('message', async function(message) {
                 + "Los valores son:\n" 
                 + companyImpactGPT + " de chat GPT\n"
                 + companyImpactGemini + " de Gemini";
+                sendMessageToTelegram(messageTelegram, grupo_chat_id);
             }
         }
     } catch (error) {
@@ -182,11 +185,11 @@ function extractCompanyImpact(generatedText) {
     }
 }
 
-async function sendMessageToTelegram(message) {
+async function sendMessageToTelegram(message,chat_id) {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const apiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     const requestBody = {
-        chat_id: "-1002057046707",
+        chat_id: chat_id,
         text: message
     };
 
