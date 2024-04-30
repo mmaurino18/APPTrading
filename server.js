@@ -1,8 +1,16 @@
 // Importar módulos necesarios
+//const http = require('http');
 const WebSocket = require('ws');
 const fetch = require('node-fetch').default;
 require('dotenv').config(); // Cargar las variables de entorno desde .env
 
+const app = express();
+const port = process.env.PORT || 3000; // Usar el puerto definido en la variable de entorno PORT o el puerto 3000 por defecto
+app.listen(port, () => {
+  console.log(`Servidor escuchando en el puerto ${port}`);
+});
+
+//const server = http.createServer();
 // Configurar instancia de Alpaca con las claves de API
 const Alpaca = require("@alpacahq/alpaca-trade-api");
 const alpaca = new Alpaca({
@@ -140,7 +148,7 @@ wss.on('message', async function(message) {
                     },
                 });
                 console.log("Order placed:", order);*/
-                const messageTelegram = "Comprar acciones de " + tickerSymbol + ",la oportunidad es " + multiplicador + "\n "   
+                const messageTelegram = "Comprar acciones de " + tickerSymbol + ", la oportunidad es " + multiplicador + "\n "   
                                         + "Los valores de las IA son:\n" 
                                         + companyImpactGPT + " de chat GPT\n"
                                         + companyImpactGemini + " de Gemini";
