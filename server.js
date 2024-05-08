@@ -8,9 +8,7 @@ const express = require('express');
 const app = express();
 const chat_id= "1856656765";
 const port = process.env.PORT || 3000; // Usar el puerto definido en la variable de entorno PORT o el puerto 3000 por defecto
-app.listen(port, () => {
-  console.log(`Servidor escuchando en el puerto ${port}`);
-});
+
 
 //const server = http.createServer();
 // Configurar instancia de Alpaca con las claves de API
@@ -28,8 +26,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const generativeModel = genAI.getGenerativeModel({ model: "gemini-pro"});
 // Crear conexión websocket con el servicio de noticias de Alpaca
-const wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
+
+
 function startWebSocket() {
+    const wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
     // Manejar eventos de apertura y mensajes de la conexión websocket
     wss.on('open', function() {
         console.log("Websocket connected!");
@@ -156,8 +156,8 @@ function startWebSocket() {
                                             + companyImpactGPT + " de chat GPT\n"
                                             + companyImpactGemini + " de Gemini";
 
-                    //sendMessageToTelegram(messageTelegram, grupo_chat_id);
-                } else if ((companyImpactGPT <= 30) && (companyImpactGemini >1 && companyImpactGemini<= 30) ) {
+                    sendMessageToTelegram(messageTelegram, grupo_chat_id);
+                } else if ((companyImpactGemini >1 && companyImpactGemini<= 30 && companyImpactGPT <= 30) ) {
                     // Vender todas las acciones de la empresa
                     /*const closedPosition = await alpaca.closePosition(tickerSymbol);
                     console.log("Position closed for", tickerSymbol);*/
@@ -165,7 +165,7 @@ function startWebSocket() {
                     + "Los valores son:\n" 
                     + companyImpactGPT + " de chat GPT\n"
                     + companyImpactGemini + " de Gemini";
-                    //sendMessageToTelegram(messageTelegram, grupo_chat_id);
+                    sendMessageToTelegram(messageTelegram, grupo_chat_id);
                 }
             }
         } catch (error) {
@@ -223,6 +223,10 @@ function restartWebSocket() {
     });
 }
 
+app.listen(port, () => {
+    console.log(`Servidor escuchando en el puerto ${port}`);
+    startWebSocket();
+  });
 cron.schedule('0 * * * *', () => {
     restartWebSocket();
     /*server.close(() => {
@@ -232,6 +236,7 @@ cron.schedule('0 * * * *', () => {
         });
     });*/
 });
+
 cron.schedule('*/30 * * * *', () => {
     sendMessageToTelegram('Sigo funcionando',chat_id);
     console.log('Sending message every 10 minutes...');
