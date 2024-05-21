@@ -154,7 +154,7 @@ async function sendMessageToTelegram(message, chat_id) {
 }
 
 function startKeepAlive() {
-    const url = `http://localhost:${port}/keepalive`;
+    const url = `https://apptrading.onrender.com/`;
     setInterval(async () => {
         try {
             const response = await fetch(url);
