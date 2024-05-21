@@ -1,10 +1,9 @@
+const express = require('express');
 const WebSocket = require('ws');
 const fetch = require('node-fetch').default;
 require('dotenv').config();
 const cron = require('node-cron');
-const express = require('express');
 const app = express();
-const chat_id = "1856656765";
 const port = process.env.PORT || 3000;
 
 const Alpaca = require("@alpacahq/alpaca-trade-api");
@@ -19,14 +18,14 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const generativeModel = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-let wss;
+const chat_id = "1856656765";
 
 function startWebSocket() {
-    wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
+    const wss = new WebSocket("wss://stream.data.alpaca.markets/v1beta1/news");
 
     wss.on('open', function() {
         console.log("Websocket connected!");
-        sendMessageToTelegram('Me conecté correctamente', chat_id);
+        sendMessageToTelegram('Me conecte correctamente', chat_id);
 
         const authMsg = {
             action: 'auth',
@@ -45,7 +44,6 @@ function startWebSocket() {
     wss.on('message', async function(message) {
         try {
             console.log("Message is " + message);
-
             const currentEvent = JSON.parse(message)[0];
 
             if (currentEvent.T === "n") {
@@ -95,16 +93,16 @@ function startWebSocket() {
                     multiplicador = "EXCELENTE";
                 }
                 if ((companyImpactGPT >= 75 && companyImpactGemini >= 70) || (companyImpactGPT >= 70 && companyImpactGemini >= 75) || (companyImpactGPT >= 80) || (companyImpactGemini >= 80)) {
-                    const messageTelegram = "Comprar acciones de " + tickerSymbol + ", la oportunidad es " + multiplicador + "\n " +
-                        "Los valores de las IA son:\n" +
-                        companyImpactGPT + " de chat GPT\n" +
-                        companyImpactGemini + " de Gemini";
+                    const messageTelegram = "Comprar acciones de " + tickerSymbol + ", la oportunidad es " + multiplicador + "\n "
+                        + "Los valores de las IA son:\n"
+                        + companyImpactGPT + " de chat GPT\n"
+                        + companyImpactGemini + " de Gemini";
                     sendMessageToTelegram(messageTelegram, grupo_chat_id);
                 } else if ((companyImpactGemini > 1 && companyImpactGemini <= 30 && companyImpactGPT <= 30)) {
-                    const messageTelegram = "Vender acciones de " + tickerSymbol + "\n" +
-                        "Los valores son:\n" +
-                        companyImpactGPT + " de chat GPT\n" +
-                        companyImpactGemini + " de Gemini";
+                    const messageTelegram = "Vender acciones de " + tickerSymbol + "\n"
+                        + "Los valores son:\n"
+                        + companyImpactGPT + " de chat GPT\n"
+                        + companyImpactGemini + " de Gemini";
                     sendMessageToTelegram(messageTelegram, grupo_chat_id);
                 }
             }
@@ -116,13 +114,6 @@ function startWebSocket() {
     wss.on('close', function() {
         console.log("Websocket disconnected!");
         sendMessageToTelegram('¡El websocket se ha desconectado!', chat_id);
-        // Reconnect
-        setTimeout(startWebSocket, 10000); // Attempt reconnection after 10 seconds
-    });
-
-    wss.on('error', function(error) {
-        console.error('WebSocket error:', error);
-        wss.close(); // Close the connection on error and trigger reconnection
     });
 }
 
@@ -162,25 +153,25 @@ async function sendMessageToTelegram(message, chat_id) {
     }
 }
 
-function restartWebSocket() {
-    console.log('Reiniciando WebSocket...');
-    if (wss) {
-        wss.close();
-    } else {
-        startWebSocket();
-    }
+function startKeepAlive() {
+    const url = `http://localhost:${port}/keepalive`;
+    setInterval(async () => {
+        try {
+            const response = await fetch(url);
+            if (response.ok) {
+                console.log('Keep-alive request successful');
+            } else {
+                console.log('Keep-alive request failed');
+            }
+        } catch (error) {
+            console.error('Keep-alive request error:', error);
+        }
+    }, 5 * 60 * 1000); // 5 minutos
 }
 
 app.listen(port, () => {
     console.log(`Servidor escuchando en el puerto ${port}`);
     startWebSocket();
+    startKeepAlive();
 });
 
-cron.schedule('0 * * * *', () => {
-    restartWebSocket();
-});
-
-cron.schedule('*/30 * * * *', () => {
-    sendMessageToTelegram('Sigo funcionando', chat_id);
-    console.log('Sending message every 30 minutes...');
-});
